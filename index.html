@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StayHub – Hotel and room booking</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen">
+<div id="root"></div>
+<script>
+const { useState, useEffect } = React;
+function load(k, d) {
+  try {
+    const v = localStorage.getItem(k);
+    return v ? JSON.parse(v) : d;
+  } catch (e) {
+    return d;
+  }
+}
+function Img({ src, alt, className }) {
+  const [bad, setBad] = useState(false);
+  if (bad) return /* @__PURE__ */ React.createElement("div", { role: "img", "aria-label": alt, className: className + " bg-gradient-to-br from-slate-300 to-slate-500" });
+  return /* @__PURE__ */ React.createElement("img", { src, alt, className, onError: () => setBad(true) });
+}
+const THEME_PALETTES = {
+  indigo: {
+    name: "Indigo & Violet",
+    primary: "bg-indigo-600 hover:bg-indigo-700 text-white",
+    primaryLight: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    primaryBorder: "border-indigo-600",
+    textPrimary: "text-indigo-600",
+    bgGradient: "from-indigo-900 via-purple-900 to-slate-900",
+    accentBg: "bg-indigo-600",
+    badgeBg: "bg-indigo-100 text-indigo-800",
+    focusRing: "focus:ring-indigo-500 border-indigo-300"
+  },
+  sunset: {
+    name: "Sunset Crimson",
+    primary: "bg-rose-600 hover:bg-rose-700 text-white",
+    primaryLight: "bg-rose-50 text-rose-700 border-rose-200",
+    primaryBorder: "border-rose-600",
+    textPrimary: "text-rose-600",
+    bgGradient: "from-rose-900 via-orange-900 to-slate-900",
+    accentBg: "bg-rose-600",
+    badgeBg: "bg-rose-100 text-rose-800",
+    focusRing: "focus:ring-rose-500 border-rose-300"
+  },
+  emerald: {
+    name: "Emerald Oasis",
+    primary: "bg-emerald-600 hover:bg-emerald-700 text-white",
+    primaryLight: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    primaryBorder: "border-emerald-600",
+    textPrimary: "text-emerald-600",
+    bgGradient: "from-emerald-950 via-teal-900 to-slate-900",
+    accentBg: "bg-emerald-600",
+    badgeBg: "bg-emerald-100 text-emerald-800",
+    focusRing: "focus:ring-emerald-500 border-emerald-300"
+  },
+  cyber: {
+    name: "Cyber Neon",
+    primary: "bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold",
+    primaryLight: "bg-cyan-950/40 text-cyan-400 border-cyan-800",
+    primaryBorder: "border-cyan-400",
+    textPrimary: "text-cyan-400",
+    bgGradient: "from-slate-950 via-cyan-950 to-blue-950",
+    accentBg: "bg-cyan-500",
+    badgeBg: "bg-cyan-900/60 text-cyan-300",
+    focusRing: "focus:ring-cyan-400 border-cyan-500"
+  }
+};
+const INITIAL_PROPERTIES = [
+  {
+    id: "prop-1",
+    title: "Luxury Oceanfront Penthouse Suite",
+    type: "Hotel Suite",
+    location: "Miami, Florida",
+    price: 240,
+    rating: 4.9,
+    reviews: 84,
+    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+    host: "Alexander Wright",
+    description: "Panoramic ocean views, private hot tub, king bedroom, and 24/7 concierge service included.",
+    amenities: ["Wifi", "Pool", "Air Conditioning", "Kitchen", "Free Parking", "Jacuzzi"],
+    status: "Available"
+  },
+  {
+    id: "prop-2",
+    title: "Cozy Alpine Mountain Cabin",
+    type: "Cabin / Villa",
+    location: "Aspen, Colorado",
+    price: 185,
+    rating: 4.8,
+    reviews: 112,
+    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80",
+    host: "Elena Rostova",
+    description: "Rustic wooden cabin surrounded by pine forests. Built-in fireplace and fast Starlink wifi.",
+    amenities: ["Wifi", "Heating", "Fireplace", "Kitchen", "Free Parking"],
+    status: "Available"
+  },
+  {
+    id: "prop-3",
+    title: "Modern City Center Studio Room",
+    type: "Private Room",
+    location: "New York, New York",
+    price: 95,
+    rating: 4.6,
+    reviews: 53,
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
+    host: "Marcus Vance",
+    description: "Located in central Manhattan. Walk to subway stations, cafes, and museum districts.",
+    amenities: ["Wifi", "Air Conditioning", "Workspace"],
+    status: "Available"
+  }
+];
+function App() {
+  const [currentTheme, setCurrentTheme] = useState("indigo");
+  const [userMode, setUserMode] = useState("guest");
+  const [activeTab, setActiveTab] = useState("explore");
+  const [properties, setProperties] = useState(() => load("stayhub-props", INITIAL_PROPERTIES));
+  const [bookings, setBookings] = useState(() => load("stayhub-bookings", []));
+  const [nights, setNights] = useState(3);
+  useEffect(() => {
+    try {
+      localStorage.setItem("stayhub-props", JSON.stringify(properties));
+      localStorage.setItem("stayhub-bookings", JSON.stringify(bookings));
+    } catch (e) {
+    }
+  }, [properties, bookings]);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState("All");
+  const [maxPrice, setMaxPrice] = useState(300);
+  const [newProp, setNewProp] = useState({
+    title: "",
+    type: "Hotel Suite",
+    location: "",
+    price: 100,
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80",
+    description: "",
+    amenities: ["Wifi", "Air Conditioning"]
+  });
+  const theme = THEME_PALETTES[currentTheme];
+  const handleBookProperty = (prop, nights2 = 3) => {
+    const totalAmount = prop.price * nights2 + 25 + 15;
+    const newBooking = {
+      id: "BK-" + Math.floor(1e5 + Math.random() * 9e5),
+      propertyId: prop.id,
+      propertyTitle: prop.title,
+      location: prop.location,
+      image: prop.image,
+      pricePerNight: prop.price,
+      nights: nights2,
+      totalAmount,
+      date: (/* @__PURE__ */ new Date()).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+      status: "Confirmed"
+    };
+    setBookings([newBooking, ...bookings]);
+    setSelectedProperty(null);
+    setShowReceiptModal(newBooking);
+  };
+  const handleAddProperty = (e) => {
+    e.preventDefault();
+    if (!newProp.title || !newProp.location) return;
+    const createdProp = {
+      ...newProp,
+      id: "prop-" + Date.now(),
+      rating: 5,
+      reviews: 1,
+      host: "You (Host)",
+      status: "Available"
+    };
+    setProperties([createdProp, ...properties]);
+    alert("Your property has been listed successfully!");
+    setNewProp({
+      title: "",
+      type: "Hotel Suite",
+      location: "",
+      price: 100,
+      image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80",
+      description: "",
+      amenities: ["Wifi", "Air Conditioning"]
+    });
+    setActiveTab("dashboard");
+  };
+  const filteredProperties = properties.filter((p) => {
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = selectedType === "All" || p.type.toLowerCase().includes(selectedType.toLowerCase());
+    const matchesPrice = p.price <= maxPrice;
+    return matchesSearch && matchesType && matchesPrice;
+  });
+  return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen flex flex-col" }, /* @__PURE__ */ React.createElement("header", { className: "bg-slate-900 text-white sticky top-0 z-40 border-b border-slate-800 shadow-md" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center space-x-3 cursor-pointer", onClick: () => setActiveTab(userMode === "guest" ? "explore" : "dashboard") }, /* @__PURE__ */ React.createElement("div", { className: `w-10 h-10 rounded-xl ${theme.accentBg} flex items-center justify-center font-black text-xl shadow-lg` }, "S"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "font-extrabold text-xl tracking-tight leading-tight" }, "StayHub"), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-slate-400 uppercase tracking-widest font-semibold" }, "University Project"))), /* @__PURE__ */ React.createElement("nav", { className: "hidden md:flex items-center space-x-1" }, userMode === "guest" ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setActiveTab("explore"),
+      className: `px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "explore" ? `${theme.accentBg} text-white` : "text-slate-300 hover:text-white hover:bg-slate-800"}`
+    },
+    "Find Rooms"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setActiveTab("my-bookings"),
+      className: `px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "my-bookings" ? `${theme.accentBg} text-white` : "text-slate-300 hover:text-white hover:bg-slate-800"}`
+    },
+    "My Bookings (",
+    bookings.length,
+    ")"
+  )) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setActiveTab("dashboard"),
+      className: `px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "dashboard" ? `${theme.accentBg} text-white` : "text-slate-300 hover:text-white hover:bg-slate-800"}`
+    },
+    "Host Dashboard"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setActiveTab("add-listing"),
+      className: `px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "add-listing" ? `${theme.accentBg} text-white` : "text-slate-300 hover:text-white hover:bg-slate-800"}`
+    },
+    "+ Add New Listing"
+  )), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setActiveTab("guide"),
+      className: `px-4 py-2 rounded-lg text-sm font-medium transition ${activeTab === "guide" ? "bg-amber-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"}`
+    },
+    "App & Setup Guide"
+  )), /* @__PURE__ */ React.createElement("div", { className: "flex items-center space-x-3" }, /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      value: currentTheme,
+      onChange: (e) => setCurrentTheme(e.target.value),
+      className: "bg-slate-800 text-xs text-slate-200 border border-slate-700 rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer"
+    },
+    /* @__PURE__ */ React.createElement("option", { value: "indigo" }, "Indigo Theme"),
+    /* @__PURE__ */ React.createElement("option", { value: "sunset" }, "Sunset Crimson"),
+    /* @__PURE__ */ React.createElement("option", { value: "emerald" }, "Emerald Oasis"),
+    /* @__PURE__ */ React.createElement("option", { value: "cyber" }, "Cyber Neon")
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => {
+        const nextMode = userMode === "guest" ? "host" : "guest";
+        setUserMode(nextMode);
+        setActiveTab(nextMode === "guest" ? "explore" : "dashboard");
+      },
+      className: `px-3 py-1.5 rounded-full text-xs font-bold border transition flex items-center space-x-1.5 ${theme.primaryLight}`
+    },
+    /* @__PURE__ */ React.createElement("span", null, userMode === "guest" ? "Switch to Host Mode" : "Switch to Guest Mode")
+  )))), /* @__PURE__ */ React.createElement("main", { className: "flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8" }, userMode === "guest" && activeTab === "explore" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-8" }, /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-slate-500 uppercase mb-1" }, "Destination / Title"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "text",
+      placeholder: "Search Miami, Cabin, Suite...",
+      value: searchQuery,
+      onChange: (e) => setSearchQuery(e.target.value),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    }
+  )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-slate-500 uppercase mb-1" }, "Property Type"), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      value: selectedType,
+      onChange: (e) => setSelectedType(e.target.value),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    },
+    /* @__PURE__ */ React.createElement("option", { value: "All" }, "All Types"),
+    /* @__PURE__ */ React.createElement("option", { value: "Hotel Suite" }, "Hotel Suite"),
+    /* @__PURE__ */ React.createElement("option", { value: "Cabin / Villa" }, "Cabin / Villa"),
+    /* @__PURE__ */ React.createElement("option", { value: "Private Room" }, "Private Room")
+  )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-slate-500 uppercase mb-1" }, "Max Price per Night ($", maxPrice, ")"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "range",
+      min: "50",
+      max: "500",
+      step: "10",
+      value: maxPrice,
+      onChange: (e) => setMaxPrice(Number(e.target.value)),
+      className: "w-full mt-2 accent-indigo-600"
+    }
+  )))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" }, filteredProperties.map((prop) => /* @__PURE__ */ React.createElement("div", { key: prop.id, className: "bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "relative h-48 bg-slate-200" }, /* @__PURE__ */ React.createElement(Img, { src: prop.image, alt: prop.title, className: "w-full h-full object-cover" }), /* @__PURE__ */ React.createElement("span", { className: `absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold ${theme.badgeBg}` }, prop.type)), /* @__PURE__ */ React.createElement("div", { className: "p-5 flex-1 flex flex-col justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between items-start mb-2" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-slate-900 text-lg leading-snug" }, prop.title), /* @__PURE__ */ React.createElement("span", { className: "text-xs font-semibold bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200" }, "\u2605 ", prop.rating)), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-500 mb-3" }, "\u{1F4CD} ", prop.location), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-600 line-clamp-2 mb-4" }, prop.description)), /* @__PURE__ */ React.createElement("div", { className: "pt-3 border-t border-slate-100 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "text-xl font-extrabold text-slate-900" }, "$", prop.price), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-slate-500" }, " / night")), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setSelectedProperty(prop),
+      className: `px-4 py-2 rounded-lg text-xs font-bold ${theme.primary} transition`
+    },
+    "View & Book"
+  ))))))), userMode === "guest" && activeTab === "my-bookings" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", { className: "text-2xl font-bold text-slate-900 mb-6" }, "My Reserved Bookings"), bookings.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-16 bg-white rounded-2xl border border-slate-200" }, /* @__PURE__ */ React.createElement("p", { className: "text-slate-500 text-lg mb-4" }, "You have not placed any room bookings yet."), /* @__PURE__ */ React.createElement("button", { onClick: () => setActiveTab("explore"), className: `px-5 py-2.5 rounded-lg text-sm font-bold ${theme.primary}` }, "Browse Available Rooms")) : /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, bookings.map((bk) => /* @__PURE__ */ React.createElement("div", { key: bk.id, className: "bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center space-x-4" }, /* @__PURE__ */ React.createElement(Img, { src: bk.image, alt: bk.propertyTitle, className: "w-20 h-20 rounded-xl object-cover" }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200" }, "\u25CF ", bk.status), /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-slate-900 text-lg mt-1" }, bk.propertyTitle), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "\u{1F4CD} ", bk.location, " | Booked on: ", bk.date), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-600 mt-1" }, bk.nights, " Nights ($", bk.pricePerNight, "/night)"))), /* @__PURE__ */ React.createElement("div", { className: "text-right flex flex-col md:items-end w-full md:w-auto" }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl font-extrabold text-slate-900" }, "$", bk.totalAmount), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setShowReceiptModal(bk),
+      className: "mt-2 text-xs font-bold text-indigo-600 hover:underline"
+    },
+    "View Receipt & QR Code"
+  )))))), userMode === "host" && activeTab === "dashboard" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between items-center mb-6" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", { className: "text-2xl font-bold text-slate-900" }, "Host Management Dashboard"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-500" }, "Manage listings, track revenue, and monitor guest reservations.")), /* @__PURE__ */ React.createElement("button", { onClick: () => setActiveTab("add-listing"), className: `px-4 py-2 rounded-lg text-xs font-bold ${theme.primary}` }, "+ Create New Listing")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" }, /* @__PURE__ */ React.createElement("div", { className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-400 uppercase" }, "Total Properties"), /* @__PURE__ */ React.createElement("p", { className: "text-3xl font-extrabold text-slate-900 mt-1" }, properties.length)), /* @__PURE__ */ React.createElement("div", { className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-400 uppercase" }, "Total Guest Bookings"), /* @__PURE__ */ React.createElement("p", { className: "text-3xl font-extrabold text-indigo-600 mt-1" }, bookings.length)), /* @__PURE__ */ React.createElement("div", { className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-400 uppercase" }, "Est. Monthly Earnings"), /* @__PURE__ */ React.createElement("p", { className: "text-3xl font-extrabold text-emerald-600 mt-1" }, "$", bookings.reduce((sum, b) => sum + b.totalAmount, 1240))), /* @__PURE__ */ React.createElement("div", { className: "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-slate-400 uppercase" }, "Average Rating"), /* @__PURE__ */ React.createElement("p", { className: "text-3xl font-extrabold text-amber-500 mt-1" }, "4.8 \u2605"))), /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-slate-900 text-lg mb-4" }, "Your Active Listings"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, properties.map((p) => /* @__PURE__ */ React.createElement("div", { key: p.id, className: "bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center space-x-3" }, /* @__PURE__ */ React.createElement(Img, { src: p.image, alt: p.title, className: "w-16 h-16 rounded-lg object-cover" }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h4", { className: "font-bold text-slate-900 text-sm" }, p.title), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, p.location), /* @__PURE__ */ React.createElement("span", { className: "text-xs font-bold text-indigo-600" }, "$", p.price, "/night"))), /* @__PURE__ */ React.createElement("span", { className: "text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200" }, "Active"))))), userMode === "host" && activeTab === "add-listing" && /* @__PURE__ */ React.createElement("div", { className: "max-w-2xl mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm" }, /* @__PURE__ */ React.createElement("h2", { className: "text-2xl font-bold text-slate-900 mb-2" }, "List a New Hotel or Room"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mb-6" }, "Fill in the details below to publish your property for travelers."), /* @__PURE__ */ React.createElement("form", { onSubmit: handleAddProperty, className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase mb-1" }, "Property Title"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      placeholder: "e.g. Grand Sea Suite with Balcony",
+      value: newProp.title,
+      onChange: (e) => setNewProp({ ...newProp, title: e.target.value }),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    }
+  )), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase mb-1" }, "Property Type"), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      value: newProp.type,
+      onChange: (e) => setNewProp({ ...newProp, type: e.target.value }),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    },
+    /* @__PURE__ */ React.createElement("option", { value: "Hotel Suite" }, "Hotel Suite"),
+    /* @__PURE__ */ React.createElement("option", { value: "Cabin / Villa" }, "Cabin / Villa"),
+    /* @__PURE__ */ React.createElement("option", { value: "Private Room" }, "Private Room")
+  )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase mb-1" }, "Price per Night ($)"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      required: true,
+      min: "10",
+      value: newProp.price,
+      onChange: (e) => setNewProp({ ...newProp, price: Number(e.target.value) }),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    }
+  ))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase mb-1" }, "Location Address"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      placeholder: "City, Country or Full Address",
+      value: newProp.location,
+      onChange: (e) => setNewProp({ ...newProp, location: e.target.value }),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    }
+  )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase mb-1" }, "Image URL"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "text",
+      value: newProp.image,
+      onChange: (e) => setNewProp({ ...newProp, image: e.target.value }),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    }
+  )), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase mb-1" }, "Description"), /* @__PURE__ */ React.createElement(
+    "textarea",
+    {
+      rows: "3",
+      placeholder: "Describe room features, bed size, view, and nearby attractions...",
+      value: newProp.description,
+      onChange: (e) => setNewProp({ ...newProp, description: e.target.value }),
+      className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    }
+  )), /* @__PURE__ */ React.createElement("button", { type: "submit", className: `w-full py-3 rounded-lg font-bold text-sm ${theme.primary} shadow-md` }, "Publish Property Listing"))), activeTab === "guide" && /* @__PURE__ */ React.createElement("div", { className: "max-w-3xl mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6" }, /* @__PURE__ */ React.createElement("div", { className: "border-b border-slate-200 pb-4" }, /* @__PURE__ */ React.createElement("h2", { className: "text-2xl font-black text-slate-900" }, "University Project Presentation Guide"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mt-1" }, "How StayHub works, PC/Mobile usage, and GitHub setup guide.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "bg-slate-50 p-4 rounded-xl border border-slate-200" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-slate-900 text-base mb-1" }, "1. How do users access and download this app?"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-600 leading-relaxed" }, "This application is built as a ", /* @__PURE__ */ React.createElement("strong", null, "web app"), '. Users do not need Google Play Store or Apple App Store to download it. They simply open the URL link in any browser on PC, Android, or iPhone. On mobile devices, they can click "Add to Home Screen" to install it as a standalone mobile app icon!')), /* @__PURE__ */ React.createElement("div", { className: "bg-slate-50 p-4 rounded-xl border border-slate-200" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-slate-900 text-base mb-1" }, "2. How to host this on GitHub for FREE?"), /* @__PURE__ */ React.createElement("ol", { className: "list-decimal list-inside text-xs text-slate-600 space-y-1.5 leading-relaxed" }, /* @__PURE__ */ React.createElement("li", null, "Go to ", /* @__PURE__ */ React.createElement("strong", null, "github.com"), " and log into your account."), /* @__PURE__ */ React.createElement("li", null, "Click the ", /* @__PURE__ */ React.createElement("strong", null, '"+"'), " icon and select ", /* @__PURE__ */ React.createElement("strong", null, '"New Repository"'), ". Name it ", /* @__PURE__ */ React.createElement("code", null, "stayhub-project"), "."), /* @__PURE__ */ React.createElement("li", null, "Upload this ", /* @__PURE__ */ React.createElement("code", null, "index.html"), " file directly to your repository."), /* @__PURE__ */ React.createElement("li", null, "Go to repository ", /* @__PURE__ */ React.createElement("strong", null, "Settings \u2192 Pages"), "."), /* @__PURE__ */ React.createElement("li", null, 'Under "Branch", choose ', /* @__PURE__ */ React.createElement("code", null, "main"), " and click ", /* @__PURE__ */ React.createElement("strong", null, "Save"), "."), /* @__PURE__ */ React.createElement("li", null, "In 1\u20132 minutes, GitHub will provide a live public website URL (e.g., ", /* @__PURE__ */ React.createElement("code", null, "https://yourusername.github.io/stayhub-project"), ") that you can share with your university professor and classmates!"))), /* @__PURE__ */ React.createElement("div", { className: "bg-slate-50 p-4 rounded-xl border border-slate-200" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-slate-900 text-base mb-1" }, "3. Features to Highlight in Presentation"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc list-inside text-xs text-slate-600 space-y-1 leading-relaxed" }, /* @__PURE__ */ React.createElement("li", null, "Dual-Role Platform (Switch seamlessly between Guest & Host Mode)."), /* @__PURE__ */ React.createElement("li", null, "Real-time Property Search and Dynamic Price Slider Filtering."), /* @__PURE__ */ React.createElement("li", null, "Instant Booking Generation with downloadable/printable Digital Receipt and QR code."), /* @__PURE__ */ React.createElement("li", null, "Host Dashboard metrics and real-time listing creation module.")))))), selectedProperty && /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" }, /* @__PURE__ */ React.createElement("div", { className: "bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200" }, /* @__PURE__ */ React.createElement("div", { className: "relative h-52" }, /* @__PURE__ */ React.createElement(Img, { src: selectedProperty.image, alt: selectedProperty.title, className: "w-full h-full object-cover" }), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setSelectedProperty(null),
+      className: "absolute top-3 right-3 bg-slate-900/70 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold"
+    },
+    "\u2715"
+  )), /* @__PURE__ */ React.createElement("div", { className: "p-6" }, /* @__PURE__ */ React.createElement("span", { className: `text-xs font-bold px-2.5 py-1 rounded-full ${theme.badgeBg}` }, selectedProperty.type), /* @__PURE__ */ React.createElement("h3", { className: "text-xl font-bold text-slate-900 mt-2" }, selectedProperty.title), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mb-3" }, "\u{1F4CD} ", selectedProperty.location, " | Host: ", selectedProperty.host), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-600 leading-relaxed mb-4" }, selectedProperty.description), /* @__PURE__ */ React.createElement("div", { className: "bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs mb-4" }, /* @__PURE__ */ React.createElement("p", { className: "font-bold text-slate-800 mb-1" }, "Amenities Included:"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2" }, selectedProperty.amenities.map((a, idx) => /* @__PURE__ */ React.createElement("span", { key: idx, className: "bg-white px-2 py-1 rounded border border-slate-200 text-slate-600" }, "\u2713 ", a)))), /* @__PURE__ */ React.createElement("div", { className: "mb-4" }, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase mb-1" }, "Number of nights"), /* @__PURE__ */ React.createElement("input", { type: "number", min: "1", max: "30", value: nights, onChange: (e) => setNights(Math.max(1, Math.min(30, Number(e.target.value) || 1))), className: "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" })), /* @__PURE__ */ React.createElement("div", { className: "border-t border-slate-200 pt-4 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-400 uppercase font-bold" }, "Total Stay"), /* @__PURE__ */ React.createElement("p", { className: "text-2xl font-black text-slate-900" }, "$", selectedProperty.price * nights + 40), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500" }, "Includes $40 cleaning and tax")), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => handleBookProperty(selectedProperty, nights),
+      className: `px-6 py-2.5 rounded-xl font-bold text-sm ${theme.primary} shadow-md`
+    },
+    "Confirm Booking"
+  ))))), showReceiptModal && /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" }, /* @__PURE__ */ React.createElement("div", { className: "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center" }, /* @__PURE__ */ React.createElement("div", { className: "w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl" }, "\u2713"), /* @__PURE__ */ React.createElement("h3", { className: "text-xl font-black text-slate-900" }, "Booking Confirmed!"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-slate-500 mb-4" }, "Reservation Reference: ", /* @__PURE__ */ React.createElement("strong", null, showReceiptModal.id)), /* @__PURE__ */ React.createElement("div", { className: "bg-slate-50 p-4 rounded-xl border border-slate-200 text-left text-xs space-y-2 mb-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-500" }, "Property:"), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-slate-800" }, showReceiptModal.propertyTitle)), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-500" }, "Location:"), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-slate-800" }, showReceiptModal.location)), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between" }, /* @__PURE__ */ React.createElement("span", { className: "text-slate-500" }, "Duration:"), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-slate-800" }, showReceiptModal.nights, " Nights")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between border-t border-slate-200 pt-2 font-bold text-slate-900 text-sm" }, /* @__PURE__ */ React.createElement("span", null, "Total Paid:"), /* @__PURE__ */ React.createElement("span", null, "$", showReceiptModal.totalAmount))), /* @__PURE__ */ React.createElement("div", { className: "bg-slate-100 p-3 rounded-xl inline-block mb-4" }, /* @__PURE__ */ React.createElement("div", { className: "w-24 h-24 bg-slate-800 rounded-md flex items-center justify-center text-white text-[10px] font-mono text-center p-2" }, "[QR CODE]", /* @__PURE__ */ React.createElement("br", null), "VALIDATED")), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setShowReceiptModal(null),
+      className: `w-full py-2.5 rounded-xl font-bold text-sm ${theme.primary}`
+    },
+    "Done"
+  ))), /* @__PURE__ */ React.createElement("footer", { className: "bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-auto" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-7xl mx-auto px-4 text-center" }, /* @__PURE__ */ React.createElement("p", null, "\xA9 2026 StayHub Platform - University Engineering & Technology Project"))));
+}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(/* @__PURE__ */ React.createElement(App, null));
+
+</script>
+</body>
+</html>
